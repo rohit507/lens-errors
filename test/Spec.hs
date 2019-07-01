@@ -9,8 +9,21 @@ import Data.Tree.Lens
 numbers :: (String, [ Int ])
 numbers = ("hi", [1, 2, 3, 4])
 
+
+foo :: LensError' String (a,Int) Int
+foo = lensErr (\   (_, n) -> if n < 0 then Left "Malformed Nat" else Right n)
+              (\ (s,_) n -> if n < 0 then Left "Cannot create malformed nat" else Right (s,n))
+
 main :: IO ()
-main = hspec $ do
+main = do
+  print $ ("bar", 10) ^&? foo
+  print $ ("bar", -3) ^&? foo
+  print $ ("bar", -3) & foo .&~ 3
+  print $ ("bar", 3) & foo .&~ 3
+  print $ ("bar", 3) & foo .&~ (-3)
+
+main2 :: IO ()
+main2 = hspec $ do
     describe "examine (^&.)" $ do
         it "should view properly through traversals/folds" $ do
             numbers ^&. _2 . traversed . to show
@@ -158,5 +171,3 @@ main = hspec $ do
                 tryIx n = ix n `orFizzleWith` (\xs -> [show n <> " was out of bounds in list: " <> show xs])
             (tree & branches . tryIx 0 . branches . tryIx 10 . root %&~ (<> "!!"))
                 `shouldBe` (Failure ["10 was out of bounds in list: [Node {rootLabel = \"bottom\", subForest = []}]"])
-
-

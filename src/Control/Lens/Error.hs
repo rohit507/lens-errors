@@ -40,12 +40,20 @@ module Control.Lens.Error
 
     -- * Re-exports
     , module Data.Either.Validation
+
+    , LensError
+    , LensError'
+    , lensErr
     ) where
 
 import Control.Lens.Error.Internal.LensFail
 import Control.Lens
 import Data.Either.Validation
 import Data.Monoid
+import Data.Either (either)
+
+type LensError  e s t a b = forall f. (LensFail e f, Applicative f) => LensLike f s t a b
+type LensError' e s   a   = LensError e s s a a
 
 -- | Cause the current traversal to fizzle with a failure when the focus matches a predicate
 --
@@ -175,7 +183,7 @@ infixl 8 ^&?
 (^&?) :: Monoid e => s -> Getting (e, First a) s a -> Validation e a
 (^&?) s l = unpack . getConst .  l (Const . (mempty,) . First . Just) $ s
   where
-    unpack (_, First (Just a)) = Success a
+    unpack (_, First (Just  a)) = Success a
     unpack (e, First (Nothing)) = Failure e
 
 -- | See also '^&?'
@@ -203,6 +211,14 @@ infixl 8 .&~
 -- Failure [2]
 (.&~) :: LensLike (Validation e) s t a b -> b -> s -> Validation e t
 (.&~) l b s = s & l %%~ Success . const b
+
+lensErr :: forall f e s t a b.  (Applicative f, LensFail e f)
+        => (s -> Either e a) -> (s -> b -> Either e t) -> LensLike f s t a b
+lensErr sea sbet afb s = case sea s of
+  Left e -> fizzle e
+  Right a -> fizzJoin (either fizzle pure <$> (sbet s <$> afb a))
+
+
 
 -- | See also '.&~'
 --
