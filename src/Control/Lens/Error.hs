@@ -216,7 +216,9 @@ lensErr :: forall f e s t a b.  (Applicative f, LensFail e f)
         => (s -> Either e a) -> (s -> b -> Either e t) -> LensLike f s t a b
 lensErr sea sbet afb s = case sea s of
   Left e -> fizzle e
-  Right a -> fizzJoin (either fizzle pure <$> (sbet s <$> afb a))
+  Right a -> fizzJoin (efp . sbet s <$> afb a)
+  where
+    efp = either fizzle pure
 
 
 

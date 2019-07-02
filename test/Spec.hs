@@ -11,16 +11,16 @@ numbers = ("hi", [1, 2, 3, 4])
 
 
 foo :: LensError' String (a,Int) Int
-foo = lensErr (\   (_, n) -> if n < 0 then Left "Malformed Nat" else Right n)
-              (\ (s,_) n -> if n < 0 then Left "Cannot create malformed nat" else Right (s,n))
+foo = lensErr (\ (_, n)   -> if n < 0 then Left "Get Err" else Right n)
+              (\ (s, _) n -> if n < 0 then Left "Set Err" else Right (s,n))
 
 main :: IO ()
 main = do
-  print $ ("bar", 10) ^&? foo
-  print $ ("bar", -3) ^&? foo
-  print $ ("bar", -3) & foo .&~ 3
-  print $ ("bar", 3) & foo .&~ 3
-  print $ ("bar", 3) & foo .&~ (-3)
+  print $ ("bar", 10) ^&? foo       -- > Success 10
+  print $ ("bar", -3) ^&? foo       -- > Failure "Get Err"
+  print $ ("bar", -3) & foo .&~ 3   -- > Failure "Get Err"
+  print $ ("bar", 3) & foo .&~ 3    -- > Success ("Bar", 3)
+  print $ ("bar", 3) & foo .&~ (-3) -- > Failure "Set Err"
 
 main2 :: IO ()
 main2 = hspec $ do
